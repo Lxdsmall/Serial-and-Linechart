@@ -12,6 +12,7 @@ serial_bps = ["1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200
 serial_date = ["5", "6", "7", "8"]
 serial_check = ["偶校验", "奇校验", "高校验", "低校验", "无"]
 serial_stop = ["1", "1.5", "2"]
+chart_num = ["1", "2", "3", "4"]
 
 
 class UiFrame(object):                                          # draw group box
@@ -56,8 +57,10 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         tabs = QTabWidget(self)                                                 # 两个Tab界面
         tabs.move(215, 10)
         tabs.resize(470, 410)
+        # tabs.setStyleSheet("background:green;")
         self.date_re = QTextEdit()                                              # tab1是text edit
         self.line_set = QWidget()
+        self.line_setting()
 
         tabs.addTab(self.date_re, u"接收显示")
         tabs.addTab(self.line_set, u"图标设置")
@@ -365,32 +368,53 @@ class GUIConfigSerial(QMainWindow, UiFrame):
                                    "}")
 
     def line_setting(self):
-        lay = QGridLayout()
+        lay = QtWidgets.QGridLayout()
+        for i in range(0, 20):                                                  # 设置出20x20的格局,目的是把固定空间等分空间
+            lay.setColumnStretch(i, 1)
+        for i in range(0, 100):
+            lay.setRowStretch(i, 1)
 
         name_label = QtWidgets.QLabel(self)
         name_label.setText("图表名称:")
-        name_label.move(20, 60)
-        lay.addWidget(name_label)
+        lay.addWidget(name_label, 2, 1)
+
+        name_line = QtWidgets.QLineEdit(self)
+        name_line.resize(170, 25)
+        name_line.setPlaceholderText("This chart name")
+        name_line.returnPressed.connect(lambda: self.public_export_event(name_line.text(), "returnPressed"))
+        lay.addWidget(name_line, 2, 3)
 
         x_label = QtWidgets.QLabel(self)
         x_label.setText("X轴名称:")
-        x_label.move(20, 60)
-        lay.addWidget(x_label)
+        lay.addWidget(x_label, 8, 1)
+
+        x_line = QtWidgets.QLineEdit(self)
+        x_line.resize(170, 25)
+        x_line.setPlaceholderText("X axis name")
+        x_line.returnPressed.connect(lambda: self.public_export_event(x_line.text(), "returnPressed"))
+        lay.addWidget(x_line, 8, 5)
 
         y_label = QtWidgets.QLabel(self)
         y_label.setText("Y轴名称:")
-        y_label.move(20, 60)
-        lay.addWidget(y_label)
+        lay.addWidget(y_label, 14, 1)
 
+        y_line = QtWidgets.QLineEdit(self)
+        y_line.resize(170, 25)
+        y_line.setPlaceholderText("Y axis name")
+        y_line.returnPressed.connect(lambda: self.public_export_event(y_line.text(), "returnPressed"))
+        lay.addWidget(y_line, 14, 5)
 
-        baud_combobox = QtWidgets.QComboBox(self)
-        baud_combobox.setMaxVisibleItems(6)
-        baud_combobox.resize(100, 28)
-        baud_combobox.move(90, 60)
-        baud_combobox.addItems(serial_bps)
-        baud_combobox.setCurrentText("9600")
-        # baud_combobox.currentIndexChanged.connect(lambda: self.string_sheet_event())
-        lay.addWidget(baud_combobox)
+        chart_label = QtWidgets.QLabel(self)
+        chart_label.setText("曲线数:")
+        lay.addWidget(chart_label, 20, 1)
+
+        chart_combobox = QtWidgets.QComboBox(self)
+        chart_combobox.setMaxVisibleItems(6)
+        chart_combobox.resize(200, 28)
+        chart_combobox.addItems(chart_num)
+        chart_combobox.setCurrentText("1")
+        # chart_combobox.currentIndexChanged.connect(lambda: self.string_sheet_event())
+        lay.addWidget(chart_combobox, 20, 5)
 
         self.line_set.setLayout(lay)
 
