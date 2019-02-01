@@ -1,18 +1,16 @@
 import os
-import sys
 import numpy
 import matplotlib.pyplot
 from PySide2.QtWidgets import *
 from PySide2.QtGui import QIcon
 from PySide2.QtCore import Qt
-from PySide2 import QtWidgets, QtCore, QtGui
-import serial
+from PySide2 import QtWidgets, QtCore
 import Serial_Function
 
 default_path = "D:/"
 
 
-class UiFrame(object):                                          # draw group box
+class UiFrame(object):                                                          # draw group box
     @staticmethod
     def setup_frame(frame):
         frame.setObjectName("frame")
@@ -35,8 +33,8 @@ class UiFrame(object):                                          # draw group box
 
 
 class GUIConfigSerial(QMainWindow, UiFrame):
-    def __init__(self, parent=None):
-        super(GUIConfigSerial, self).__init__(parent)
+    def __init__(self, flag_serial):
+        super(GUIConfigSerial, self).__init__()
         self.setObjectName("GUIConfigSerial")
         self.resize(700, 570)
         self.setWindowTitle(r"串口助手定制版")
@@ -47,7 +45,7 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         layout = QtWidgets.QGridLayout()
 
         UiFrame.setup_frame(self)                                               # 绘制GroupBox
-        self.serial_widgets(layout)                                             # 串口配置
+        self.serial_widgets(layout, flag_serial)                                # 串口配置
         self.receive_widgets(layout)                                            # 接收区配置
         self.send_widgets(layout)                                               # 发送区配置
 
@@ -62,8 +60,6 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         tabs.addTab(self.date_re, u"接收显示")
         tabs.addTab(self.line_set, u"图标设置")
 
-        self.date_re.setText("123456\n")
-
         self.setStyleSheet("QGroupBox{color:green;}"                            # 设置全局stylesheet
                            "GUIConfigSerial{border-image:url(icon/background.jpg);}"              
                            "QLabel{color:red;font:16px;font-family:'宋体';font-weight:bold;}"
@@ -71,7 +67,7 @@ class GUIConfigSerial(QMainWindow, UiFrame):
                            "QTabBar:tab{width:100px;height:25px;font:16px '楷体';font-weight:bold;color:green;}")
         self.setLayout(layout)
 
-    def serial_widgets(self, lay):
+    def serial_widgets(self, lay, _flag_serial):
         global serial_combobox
         global baud_combobox
         global date_combobox
@@ -89,13 +85,18 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         serial_combobox.setMaxVisibleItems(6)
         serial_combobox.resize(100, 28)
         serial_combobox.move(90, 25)
+
         _serial = Serial_Function.SerialFunction()
-        free_com = _serial.get_free_com()
-        if len(free_com) > 5:
-            serial_combobox.addItems(free_com)
-        else:
+        free_coms = _serial.get_free_com()
+        _len = len(free_coms[0])
+        for free_com in free_coms:
             serial_combobox.addItem(free_com)
-        # serial_combobox.currentIndexChanged.connect(lambda: self.string_sheet_event())
+            if _len >= len(free_com):
+                pass
+            else:
+                _len = len(free_com)
+
+        serial_combobox.view().setFixedWidth(_len * 0.75 * 9 + 10)              # Comobox下拉列表长度自适应
         lay.addWidget(serial_combobox)
 
         baud_label = QtWidgets.QLabel(self)
@@ -174,7 +175,7 @@ class GUIConfigSerial(QMainWindow, UiFrame):
                                "border-style:inset;"
                                "color:rgba(0,0,0,100);"
                                "}")
-        open_btn.clicked.connect(lambda: self.open_btn_event())
+        open_btn.clicked.connect(lambda: open_btn_event(open_btn.text(), _flag_serial))
         open_btn.move(20, 205)
 
     def receive_widgets(self, lay):
@@ -336,58 +337,11 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         #                            "border-style:inset;"
         #                            "color:rgba(0,0,0,100);"
         #                            "}")
-        # on_off_btn.clicked.connect(lambda: self.public_gen_event())
+        send_btn.clicked.connect(lambda: self.send_dat_event(send_line.document().toPlainText()))
         send_btn.move(520, 515)
 
-    def open_btn_event(self):
-        if open_btn.text() == "打开串口":
-            port = serial_combobox.currentText()
-            baudrate = int(baud_combobox.currentText())
-            bytesize = int(date_combobox.currentText())
-            parity = Serial_Function.serial_check[check_combobox.currentText()]
-            stopbits = int(stop_combobox.currentText())
-
-            if _serial.open_serial(port, baudrate, bytesize, parity, stopbits) is True:
-                open_btn.setText("关闭串口")
-                open_btn.setStyleSheet("QPushButton{"  # normal statue style
-                                       "background-color:rgba(35,140,44,1);"
-                                       "border-color:rgba(255,255,255,30);"
-                                       "border-width:3px;"  # border width
-                                       "border-radius:8px;"  # border radius
-                                       "border-color:rgba(255,255,255,200);"  # border color
-                                       "font:bold 22px;"  # font & size
-                                       "font-family:'楷体';"
-                                       "padding:3px;"  # padding
-                                       "}"
-                                       "QPushButton:pressed{"  # Mouse pressed style
-                                       "background-color:skyblue;"  # background(also use picture)
-                                       "border-style:outset;"  # border style(inset/outset)
-                                       "color:rgba(0,0,0,200);"  # font color
-                                       "}")
-            else:
-                pass
-        else:
-            if _serial.close_serial() is True:
-                open_btn.setText("打开串口")
-                open_btn.setStyleSheet("QPushButton{"  # normal statue style
-                                       "background-color:skyblue;"  # background(also use picture)
-                                       "border-style:outset;"  # border style(inset/outset)
-                                       "border-width:3px;"  # border width
-                                       "border-radius:8px;"  # border radius
-                                       "border-color:rgba(255,255,255,200);"  # border color
-                                       "font:bold 22px;"  # font & size
-                                       "font-family:'楷体';"
-                                       "color:rgba(0,0,0,200);"  # font color
-                                       "padding:3px;"  # padding
-                                       "}"
-                                       "QPushButton:pressed{"  # Mouse pressed style
-                                       "background-color:rgba(35,140,44,1);"
-                                       "border-color:rgba(255,255,255,30);"
-                                       "border-style:inset;"
-                                       "color:rgba(0,0,0,100);"
-                                       "}")
-            else:
-                pass
+    def text_edit_write(self, dat):
+        self.date_re.setText(dat)
 
     def line_setting(self):
         lay = QtWidgets.QGridLayout()
@@ -529,6 +483,9 @@ class GUIConfigSerial(QMainWindow, UiFrame):
         else:
             pass
 
+    def send_dat_event(self, send_byte):
+        _serial.serial_write(send_byte, "DEC")
+
     def send_file_event(self, input_file, category):
         global default_path
         global input_path
@@ -555,3 +512,45 @@ class GUIConfigSerial(QMainWindow, UiFrame):
 
         time_send = send_time
 
+
+def open_btn_event(current_text, __flag_serial):
+    if current_text == "打开串口":
+        _como = serial_combobox.currentText().split("(")
+        try:
+            port = _como[1].rstrip(")")
+        except:
+            pass
+        else:
+            baudrate = int(baud_combobox.currentText())
+            bytesize = int(date_combobox.currentText())
+            parity = Serial_Function.serial_check[check_combobox.currentText()]
+            stopbits = int(stop_combobox.currentText())
+
+            _serial.get_serial(port, baudrate, bytesize, parity, stopbits)
+            if _serial.open_serial() is True:
+                open_btn.setText("关闭串口")
+                open_btn.setStyleSheet("background-color:rgba(35,140,44,1);"
+                                       "border-color:rgba(255,255,255,30);"
+                                       "border-width:3px;"                  # border width
+                                       "border-radius:8px;"                 # border radius
+                                       "border-color:rgba(255,255,255,200);"  # border color
+                                       "font:bold 22px;"                    # font & size
+                                       "font-family:'楷体';"
+                                       "padding:3px;")                      # padding
+                __flag_serial.put("Serial_opened")
+
+    elif current_text == "关闭串口":
+        if _serial.close_serial() is True:
+            open_btn.setText("打开串口")
+            open_btn.setStyleSheet("background-color:skyblue;"          # background(also use picture)
+                                   "border-style:outset;"               # border style(inset/outset)
+                                   "border-width:3px;"                  # border width
+                                   "border-radius:8px;"                 # border radius
+                                   "border-color:rgba(255,255,255,200);"  # border color
+                                   "font:bold 22px;"                    # font & size
+                                   "font-family:'楷体';"
+                                   "color:rgba(0,0,0,200);"             # font color
+                                   "padding:3px;")                      # padding
+            __flag_serial.put("Serial_closed")
+    else:
+        pass

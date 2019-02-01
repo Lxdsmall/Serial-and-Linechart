@@ -1,10 +1,9 @@
 import sys
+import time
 import serial
 import serial.tools.list_ports
 
-global flag_open_serial                                     # 串口打开标志位
 
-flag_open_serial = 0
 serial_bps = ["1200", "2400", "4800", "9600", "19200", "38400", "57600", "115200"]
 serial_date = ["5", "6", "7", "8"]
 serial_check = {"偶校验": "E", "奇校验": "O", "高校验": "M", "低校验": "S", "无": "N"}
@@ -22,45 +21,79 @@ class SerialFunction:
 
     def get_free_com(self):
         plist = list(serial.tools.list_ports.comports())
+        ports = []
         if len(plist) <= 0:
             serial_name = ''
-            # print("没有发现端口!")
+            print("没有发现端口!")
         else:
-            plist_0 = list(plist[0])
-            serial_name = plist_0[0]
-            # print("可用端口名>>>", serialFd.name)
-        return serial_name
+            for port in plist:
+                serial_name = port[1]
+                ports.append(str(port[1]))
+                print("可用端口名>>>", serial_name)
+        return ports
 
-    def open_serial(self, serial_port, serial_baudrate, serial_bytesize, serial_parity, serial_stopbits):
+    def get_serial(self, serial_port, serial_baudrate, serial_bytesize, serial_parity, serial_stopbits):
         global serial_com
-        serial_com = serial.Serial(port=serial_port, baudrate=serial_baudrate, bytesize=serial_bytesize,
-                                   parity=serial_parity, stopbits=serial_stopbits)
+        # serial_com = serial.Serial(port=serial_port, baudrate=serial_baudrate, bytesize=serial_bytesize,
+        #                            parity=serial_parity, stopbits=serial_stopbits)
+
+        serial_com = serial.Serial()
+        serial_com.port = serial_port
+        serial_com.baudrate = serial_baudrate
+        serial_com.bytesize = serial_bytesize
+        serial_com.parity = serial_parity
+        serial_com.stopbits = serial_stopbits
+        serial_com.timeout = 0.5
+        serial_com.writeTimeout = 0.5
+
+    def get_serial_mode(self):
         if serial_com.isOpen() is True:
-            flag_open_serial = 1
             return True
         else:
             return False
+
+    def open_serial(self):
+        if serial_com.isOpen() is True:
+            serial_com.close()
+        else:
+            pass
+        serial_com.open()
+        print("串口名: " + str(serial_com.port))                                    # 串口名
+        print("波特率: " + str(serial_com.baudrate))                                # 波特率
+        print("字节数: " + str(serial_com.bytesize))                                # 字节大小
+        print("校验位: " + str(serial_com.parity))                                  # 校验位N－无校验，E－偶校验，O－奇校验
+        print("停止位: " + str(serial_com.stopbits))                                # 停止位
+        print("读超时: " + str(serial_com.timeout))                                 # 读超时设置
+        print("写超时: " + str(serial_com.writeTimeout))                            # 写超时
+        print("软件流控: " + str(serial_com.xonxoff))                               # 软件流控
+        print("硬件流控: " + str(serial_com.rtscts))                                # 硬件流控
+        print("硬件流控: " + str(serial_com.dsrdtr))                                # 硬件流控
+        print("字符间隔超时: " + str(serial_com.interCharTimeout))                   # 字符间隔超时
+        return self.get_serial_mode()
 
     def close_serial(self):
-        serial_com.close()
         if serial_com.isOpen() is True:
+            serial_com.close()
+        else:
+            pass
+
+        if self.get_serial_mode() is True:
             return False
         else:
-            flag_open_serial = 0
             return True
 
-    # def get_serial_statu(self):
-    #     if serial_com.isOpen() is True:
-    #         return True
-    #     else:
-    #         return False
+    def serial_wating(self):
+        return serial_com.inWaiting()
 
     def serial_read(self, size):
         return serial_com.read(size)
 
+    def serial_readline(self):
+        return serial_com.readline()
+
     def serial_write(self, send_buf, send_type):
         if send_type == "DEC":
-            serial_com.write(send_buf)
+            serial_com.write(send_buf.encode("utf-8"))
 
         elif send_type == "HEX":
             lang = len(send_buf)
