@@ -484,7 +484,7 @@ class GUIConfigSerial(QMainWindow, UiFrame):
             pass
 
     def send_dat_event(self, send_byte):
-        _serial.serial_write(send_byte, "DEC")
+        _serial.serial_write(send_byte, "HEX")
 
     def send_file_event(self, input_file, category):
         global default_path

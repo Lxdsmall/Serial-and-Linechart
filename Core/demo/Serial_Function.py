@@ -1,6 +1,7 @@
 import sys
 import time
 import serial
+import binascii
 import serial.tools.list_ports
 
 
@@ -96,12 +97,13 @@ class SerialFunction:
             serial_com.write(send_buf.encode("utf-8"))
 
         elif send_type == "HEX":
-            lang = len(send_buf)
-            if (lang % 2) == 0:
+            if (len(send_buf) % 2) == 0:
                 pass
             else:                                # 需要注意一点，如果字符串list的长度为奇数，则decode会报错，可以按照实际情况，用字符串的切片操作，在字符串的开头或结尾加一个'0'
-                send_buf = send_buf + '0'
-                buf = send_buf.decode("hex")
-                serial_com.write(buf)
+                send_buf = '0' + send_buf
+
+            buf = bytes.fromhex(send_buf)
+            serial_com.write(buf)
+
         else:
             pass
